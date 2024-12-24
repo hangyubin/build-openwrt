@@ -1,3 +1,4 @@
+# 默认luci 23.05
 #!/bin/bash
 
 # 打包Toolchain
