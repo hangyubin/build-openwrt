@@ -11,7 +11,7 @@ on:
         required: true
         default: '18.06'
         type: choice
-        options: [18.06, 23.05]
+        options: [18.06, 23.05,plus]
 
       target:
         description: '选择要编译的机型'
