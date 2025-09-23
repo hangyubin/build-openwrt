@@ -225,15 +225,10 @@ else
     echo "REBUILD_TOOLCHAIN=true" >>$GITHUB_ENV
 fi
 
-# 添加istoreos 商店及首页
+# 开始更新&安装插件
 begin_time=$(date '+%H:%M:%S')
 echo >> feeds.conf.default
 echo 'src-git istore https://github.com/linkease/istore;main' >> feeds.conf.default
-./scripts/feeds update istore
-./scripts/feeds install -d y -p istore luci-app-store
-
-# 开始更新&安装插件
-begin_time=$(date '+%H:%M:%S')
 ./scripts/feeds update -a 1>/dev/null 2>&1
 ./scripts/feeds install -a 1>/dev/null 2>&1
 status "更新&安装插件"
