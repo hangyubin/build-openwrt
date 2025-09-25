@@ -249,8 +249,8 @@ clone_all https://github.com/sbwml/luci-app-alist
 clone_all https://github.com/sbwml/luci-app-mosdns
 git_clone https://github.com/sbwml/packages_lang_golang golang
 
-clone_all https://github.com/linkease/istore-ui
-clone_all https://github.com/linkease/istore luci
+# clone_all https://github.com/linkease/istore-ui
+# clone_all https://github.com/linkease/istore luci
 
 clone_all https://github.com/brvphoenix/luci-app-wrtbwmon
 clone_all https://github.com/brvphoenix/wrtbwmon
