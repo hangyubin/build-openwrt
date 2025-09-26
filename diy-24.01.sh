@@ -150,7 +150,7 @@ clone_all() {
 # 设置编译源码与分支
 REPO_URL="https://github.com/immortalwrt/immortalwrt"
 echo "REPO_URL=$REPO_URL" >>$GITHUB_ENV
-REPO_BRANCH="openwrt-24.10"
+REPO_BRANCH="openwrt-23.05"
 echo "REPO_BRANCH=$REPO_BRANCH" >>$GITHUB_ENV
 
 # 开始拉取编译源码
@@ -221,15 +221,6 @@ if [[ $TOOLCHAIN = 'true' ]]; then
 else
     echo "REBUILD_TOOLCHAIN=true" >>$GITHUB_ENV
 fi
-
-# 添加istore、nas-packages源
-begin_time=$(date '+%H:%M:%S')
-echo >> feeds.conf.default
-echo 'src-git istore https://github.com/linkease/istore;main' >> feeds.conf.default
-echo >> feeds.conf.default
-echo 'src-git nas https://github.com/linkease/nas-packages.git;master' >> feeds.conf.default
-echo 'src-git nas_luci https://github.com/linkease/nas-packages-luci.git;main' >> feeds.conf.default
-status "添加istoreos插件"
 
 # 开始更新&安装插件
 begin_time=$(date '+%H:%M:%S')
