@@ -295,8 +295,6 @@ download_toolchain() {
 
 # 添加额外软件源
 add_extra_feeds() {
-    begin_time=$(date '+%H:%M:%S')
-    
     # 添加istore源
     echo >> feeds.conf.default
     echo 'src-git istore https://github.com/linkease/istore;main' >> feeds.conf.default
@@ -305,10 +303,8 @@ add_extra_feeds() {
     echo >> feeds.conf.default
     echo 'src-git nas https://github.com/linkease/nas-packages.git;master' >> feeds.conf.default
     echo 'src-git nas_luci https://github.com/linkease/nas-packages-luci.git;main' >> feeds.conf.default
-    
-    echo "$(color cg "✅ 添加istore/nas软件源完成")"
-    
-    # 可选：显示当前所有feeds源
+     
+   # 可选：显示当前所有feeds源
     if [[ "$DEBUG" = 'true' ]]; then
         echo "$(color cc "📋 当前feeds.conf.default内容:")"
         cat feeds.conf.default | grep -v "^#" | grep -v "^$"
