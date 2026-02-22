@@ -297,7 +297,7 @@ echo 'src-git istore https://github.com/linkease/istore;main' >> feeds.conf.defa
 echo >> feeds.conf.default
 echo 'src-git nas https://github.com/linkease/nas-packages.git;master' >> feeds.conf.default
 echo 'src-git nas_luci https://github.com/linkease/nas-packages-luci.git;main' >> feeds.conf.default
-status "添加istoreos插件"
+echo "$(color cg "✅ 添加istoreos插件")"
 
 # 更新&安装插件
 update_install_feeds() {
