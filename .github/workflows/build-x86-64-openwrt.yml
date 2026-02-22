@@ -44,7 +44,7 @@ on:
       ip_address:
         description: '设置默认IP地址'
         required: false
-        default: '10.0.0.2'
+        default: '192.168.2.253'
 
       partsize:
         description: '设置rootfs大小'
