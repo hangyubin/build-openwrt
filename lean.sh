@@ -291,6 +291,17 @@ download_toolchain() {
     fi
 }
 
+# 添加额外软件源
+add_extra_feeds() {
+    # 添加istore源
+    echo >> feeds.conf.default
+    echo 'src-git istore https://github.com/linkease/istore;main' >> feeds.conf.default
+    
+    # 添加nas-packages源
+    echo >> feeds.conf.default
+    echo 'src-git nas https://github.com/linkease/nas-packages.git;master' >> feeds.conf.default
+    echo 'src-git nas_luci https://github.com/linkease/nas-packages-luci.git;main' >> feeds.conf.default
+     
 # 更新&安装插件
 update_install_feeds() {
     ./scripts/feeds update -a 1>/dev/null 2>&1
