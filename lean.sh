@@ -25,16 +25,16 @@ fi
 # 创建toolchain缓存保存目录
 [ -d "$GITHUB_WORKSPACE/output" ] || mkdir "$GITHUB_WORKSPACE/output"
 
-# 颜色输出
+# 颜色输出（改用 printf，避免 echo -e 的多余换行）
 color() {
     case "$1" in
-        cr) echo -e "\e[1;31m${2}\e[0m" ;;  # 红色
-        cg) echo -e "\e[1;32m${2}\e[0m" ;;  # 绿色
-        cy) echo -e "\e[1;33m${2}\e[0m" ;;  # 黄色
-        cb) echo -e "\e[1;34m${2}\e[0m" ;;  # 蓝色
-        cp) echo -e "\e[1;35m${2}\e[0m" ;;  # 紫色
-        cc) echo -e "\e[1;36m${2}\e[0m" ;;  # 青色
-        cw) echo -e "\e[1;37m${2}\e[0m" ;;  # 白色
+        cr) printf "\e[1;31m%s\e[0m" "$2" ;;  # 红色
+        cg) printf "\e[1;32m%s\e[0m" "$2" ;;  # 绿色
+        cy) printf "\e[1;33m%s\e[0m" "$2" ;;  # 黄色
+        cb) printf "\e[1;34m%s\e[0m" "$2" ;;  # 蓝色
+        cp) printf "\e[1;35m%s\e[0m" "$2" ;;  # 紫色
+        cc) printf "\e[1;36m%s\e[0m" "$2" ;;  # 青色
+        cw) printf "\e[1;37m%s\e[0m" "$2" ;;  # 白色
     esac
 }
 
@@ -45,17 +45,11 @@ status_info() {
     "$@"
     exit_code=$?
     [[ "$exit_code" -eq 99 ]] && return 0
-    if [[ -n "$begin_time" ]]; then
-        time_info="==> 用时 $(($(date +%s) - begin_time)) 秒"
-    else
-        time_info=""
-    fi
+    time_info="==> 用时 $(($(date +%s) - begin_time)) 秒"
     if [[ "$exit_code" -eq 0 ]]; then
-        printf "%s %-52s %s %s %s %s %s %s %s\n" \
-        $(color cy "⏳ $task_name") [ $(color cg ✔) ] $(color cw "$time_info")
+        printf "%s %s %s %s %s\n" "$(color cy "⏳ $task_name")" "[" "$(color cg ✔)" "]" "$(color cw "$time_info")"
     else
-        printf "%s %-52s %s %s %s %s %s %s %s\n" \
-        $(color cy "⏳ $task_name") [ $(color cr ✖) ] $(color cw "$time_info")
+        printf "%s %s %s %s %s\n" "$(color cy "⏳ $task_name")" "[" "$(color cr ✖)" "]" "$(color cw "$time_info")"
     fi
 }
 
@@ -82,7 +76,7 @@ git_clone() {
     fi
     target_dir="${1:-${repo_url##*/}}"
     git clone -q $branch --depth=1 "$repo_url" "$target_dir" 2>/dev/null || {
-        print_info $(color cr 拉取) "$repo_url" [ $(color cr ✖) ]
+        print_info "$(color cr 拉取)" "$repo_url" "[" "$(color cr ✖)" "]"
         return 1
     }
     rm -rf $target_dir/{.git*,README*.md,LICENSE}
@@ -90,10 +84,10 @@ git_clone() {
     if [[ -d "$current_dir" ]]; then
         rm -rf "$current_dir"
         mv -f "$target_dir" "${current_dir%/*}"
-        print_info $(color cg 替换) "$target_dir" [ $(color cg ✔) ]
+        print_info "$(color cg 替换)" "$target_dir" "[" "$(color cg ✔)" "]"
     else
         mv -f "$target_dir" "$destination_dir"
-        print_info $(color cb 添加) "$target_dir" [ $(color cb ✔) ]
+        print_info "$(color cb 添加)" "$target_dir" "[" "$(color cb ✔)" "]"
     fi
 }
 
@@ -109,7 +103,7 @@ clone_dir() {
         shift 2
     fi
     git clone -q $branch --depth=1 "$repo_url" "$temp_dir" 2>/dev/null || {
-        print_info $(color cr 拉取) "$repo_url" [ $(color cr ✖) ]
+        print_info "$(color cr 拉取)" "$repo_url" "[" "$(color cr ✖)" "]"
         rm -rf "$temp_dir"
         return 1
     }
@@ -119,17 +113,17 @@ clone_dir() {
         [[ -d "$source_dir" ]] || \
         source_dir=$(find "$temp_dir" -maxdepth 4 -type d -name "$target_dir" -print -quit) && \
         [[ -d "$source_dir" ]] || {
-            print_info $(color cr 查找) "$target_dir" [ $(color cr ✖) ]
+            print_info "$(color cr 查找)" "$target_dir" "[" "$(color cr ✖)" "]"
             continue
         }
         current_dir=$(find_dir "package/ feeds/ target/" "$target_dir")
         if [[ -d "$current_dir" ]]; then
             rm -rf "$current_dir"
             mv -f "$source_dir" "${current_dir%/*}"
-            print_info $(color cg 替换) "$target_dir" [ $(color cg ✔) ]
+            print_info "$(color cg 替换)" "$target_dir" "[" "$(color cg ✔)" "]"
         else
             mv -f "$source_dir" "$destination_dir"
-            print_info $(color cb 添加) "$target_dir" [ $(color cb ✔) ]
+            print_info "$(color cb 添加)" "$target_dir" "[" "$(color cb ✔)" "]"
         fi
     done
     rm -rf "$temp_dir"
@@ -147,7 +141,7 @@ clone_all() {
         shift 2
     fi
     git clone -q $branch --depth=1 "$repo_url" "$temp_dir" 2>/dev/null || {
-        print_info $(color cr 拉取) "$repo_url" [ $(color cr ✖) ]
+        print_info "$(color cr 拉取)" "$repo_url" "[" "$(color cr ✖)" "]"
         rm -rf "$temp_dir"
         return 1
     }
@@ -158,10 +152,10 @@ clone_all() {
             if [[ -d "$current_dir" ]]; then
                 rm -rf "$current_dir"
                 mv -f "$source_dir" "${current_dir%/*}"
-                print_info $(color cg 替换) "$target_dir" [ $(color cg ✔) ]
+                print_info "$(color cg 替换)" "$target_dir" "[" "$(color cg ✔)" "]"
             else
                 mv -f "$source_dir" "$destination_dir"
-                print_info $(color cb 添加) "$target_dir" [ $(color cb ✔) ]
+                print_info "$(color cb 添加)" "$target_dir" "[" "$(color cb ✔)" "]"
             fi
         done < <(find "$1" -maxdepth 1 -mindepth 1 -type d ! -name '.*')
     }
@@ -170,7 +164,7 @@ clone_all() {
     else
         for dir_name in "$@"; do
             [[ -d "$temp_dir/$dir_name" ]] && process_dir "$temp_dir/$dir_name" || \
-            print_info $(color cr 目录) "$dir_name" [ $(color cr ✖) ]
+            print_info "$(color cr 目录)" "$dir_name" "[" "$(color cr ✖)" "]"
         done
     fi
     rm -rf "$temp_dir"
@@ -189,6 +183,9 @@ main() {
 
     # 下载部署toolchain缓存
     status_info "下载部署toolchain缓存" download_toolchain
+
+    # 添加额外软件源（istore + nas）
+    status_info "添加额外软件源" add_extra_feeds
 
     # 更新&安装插件
     status_info "更新&安装插件" update_install_feeds
@@ -260,11 +257,11 @@ set_variable_values() {
     CACHE_NAME="$SOURCE_REPO-${REPO_BRANCH#*-}-$DEVICE_TARGET-cache-$TOOLS_HASH"
     echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
 
-    # 源码更新信息
-    echo "COMMIT_AUTHOR=$(git show -s --date=short --format="作者: %an")" >> $GITHUB_ENV
-    echo "COMMIT_DATE=$(git show -s --date=short --format="时间: %ci")" >> $GITHUB_ENV
-    echo "COMMIT_MESSAGE=$(git show -s --date=short --format="内容: %s")" >> $GITHUB_ENV
-    echo "COMMIT_HASH=$(git show -s --date=short --format="hash: %H")" >> $GITHUB_ENV
+    # 源码更新信息（--format 使用单引号，避免双引号嵌套）
+    echo "COMMIT_AUTHOR=$(git show -s --date=short --format='作者: %an')" >> $GITHUB_ENV
+    echo "COMMIT_DATE=$(git show -s --date=short --format='时间: %ci')" >> $GITHUB_ENV
+    echo "COMMIT_MESSAGE=$(git show -s --date=short --format='内容: %s')" >> $GITHUB_ENV
+    echo "COMMIT_HASH=$(git show -s --date=short --format='hash: %H')" >> $GITHUB_ENV
 }
 
 # 下载部署toolchain缓存
@@ -275,9 +272,9 @@ download_toolchain() {
         cache_xc=$(curl -sL "https://api.github.com/repos/haiibo/toolchain-cache/releases" | awk -F '"' '/download_url/{print $4}' | grep "$CACHE_NAME")
         if [[ "$cache_xa" || "$cache_xc" ]]; then
             wget -qc -t=3 "${cache_xa:-$cache_xc}"
-            if [ -e *.tzst ]; then
+            if compgen -G "*.tzst" > /dev/null; then
                 tar -I unzstd -xf *.tzst || tar -xf *.tzst
-                [ "$cache_xa" ] || (cp *.tzst $GITHUB_WORKSPACE/output && echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV)
+                [ "$cache_xa" ] || (cp -f *.tzst $GITHUB_WORKSPACE/output && echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV)
                 [ -d staging_dir ] && sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
             fi
         else
@@ -291,24 +288,24 @@ download_toolchain() {
     fi
 }
 
-# 添加额外软件源
+# 添加额外软件源（istore 应用商店 + NAS/Quickstart）
 add_extra_feeds() {
-    # 添加istore源
-    echo >> feeds.conf.default
+    # iStore 应用商店
     echo 'src-git istore https://github.com/linkease/istore;main' >> feeds.conf.default
-    
-    # 添加nas-packages源
-    echo >> feeds.conf.default
+
+    # NAS 相关包
     echo 'src-git nas https://github.com/linkease/nas-packages.git;master' >> feeds.conf.default
+
+    # NAS LuCI 界面（含 Quickstart 首页/向导）
     echo 'src-git nas_luci https://github.com/linkease/nas-packages-luci.git;main' >> feeds.conf.default
-     
-   # 可选：显示当前所有feeds源
+
+    # 可选：显示当前 feeds 源
     if [[ "$DEBUG" = 'true' ]]; then
         echo "$(color cc "📋 当前feeds.conf.default内容:")"
         cat feeds.conf.default | grep -v "^#" | grep -v "^$"
     fi
 }
-     
+
 # 更新&安装插件
 update_install_feeds() {
     ./scripts/feeds update -a 1>/dev/null 2>&1
@@ -332,8 +329,6 @@ add_custom_packages() {
     git_clone https://github.com/pymumu/openwrt-smartdns smartdns
     git_clone https://github.com/ximiTech/luci-app-msd_lite
     git_clone https://github.com/ximiTech/msd_lite
-    # clone_all https://github.com/linkease/istore-ui
-    # clone_all https://github.com/linkease/istore luci
 
     # 科学上网插件
     clone_all https://github.com/fw876/helloworld
@@ -352,7 +347,6 @@ add_custom_packages() {
     # 晶晨宝盒
     clone_all lua https://github.com/ophub/luci-app-amlogic
     sed -i "s|firmware_repo.*|firmware_repo 'https://github.com/$GITHUB_REPOSITORY'|g" $destination_dir/luci-app-amlogic/root/etc/config/amlogic
-    # sed -i "s|kernel_path.*|kernel_path 'https://github.com/ophub/kernel'|g" $destination_dir/luci-app-amlogic/root/etc/config/amlogic
     sed -i "s|ARMv8|$RELEASE_TAG|g" $destination_dir/luci-app-amlogic/root/etc/config/amlogic
 
     # 修复Makefile路径
@@ -385,17 +379,12 @@ apply_custom_settings() {
     # 修改默认ip地址
     [ "$IP_ADDRESS" ] && sed -i '/lan) ipad/s/".*"/"'"$IP_ADDRESS"'"/' package/base-files/*/bin/config_generate
 
-    # 更改默认shell为zsh
-    # sed -i 's/\/bin\/ash/\/usr\/bin\/zsh/g' package/base-files/files/etc/passwd
-
     # ttyd免登录
     sed -i 's|/bin/login|/bin/login -f root|g' feeds/packages/utils/ttyd/files/ttyd.config
 
-    # 设置root用户密码为空
-    # sed -i '/CYXluq4wUazHjmCDBCqXF/d' package/lean/default-settings/files/zzz-default-settings 
-    
     # 更改argon主题背景
-    cp -f $GITHUB_WORKSPACE/images/bg1.jpg feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
+    [ -e "$GITHUB_WORKSPACE/images/bg1.jpg" ] && \
+        cp -f $GITHUB_WORKSPACE/images/bg1.jpg feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
 
     # 修改版本为编译日期
     orig_version=$(awk -F "'" '/DISTRIB_REVISION=/{print $2}' package/lean/default-settings/files/zzz-default-settings)
@@ -410,18 +399,6 @@ apply_custom_settings() {
             echo 'msgstr "网络存储"' >> "$file"
         fi
     done
-
-    # 删除主题默认设置
-    # find $destination_dir/luci-theme-*/ -type f -name '*luci-theme-*' -exec sed -i '/set luci.main.mediaurlbase/d' {} +
-
-    # 调整docker到"服务"菜单
-    # sed -i 's/"admin"/"admin", "services"/g' feeds/luci/applications/luci-app-dockerman/luasrc/controller/*.lua
-    # sed -i 's/"admin"/"admin", "services"/g; s/admin\//admin\/services\//g' feeds/luci/applications/luci-app-dockerman/luasrc/model/cbi/dockerman/*.lua
-    # sed -i 's/admin\//admin\/services\//g' feeds/luci/applications/luci-app-dockerman/luasrc/view/dockerman/*.htm
-    # sed -i 's|admin\\|admin\\/services\\|g' feeds/luci/applications/luci-app-dockerman/luasrc/view/dockerman/container.htm
-
-    # 取消对samba4的菜单调整
-    # sed -i '/samba4/s/^/#/' package/lean/default-settings/files/zzz-default-settings
 }
 
 # 更新配置文件
@@ -468,6 +445,7 @@ preset_shell_tools() {
     fi
 }
 
+# 显示编译信息
 show_build_info() {
     echo -e "$(color cy "📊 当前编译信息")"
     echo "========================================"
