@@ -302,6 +302,13 @@ add_extra_feeds() {
     echo 'src-git nas https://github.com/linkease/nas-packages.git;master' >> feeds.conf.default
     echo 'src-git nas_luci https://github.com/linkease/nas-packages-luci.git;main' >> feeds.conf.default
      
+   # 可选：显示当前所有feeds源
+    if [[ "$DEBUG" = 'true' ]]; then
+        echo "$(color cc "📋 当前feeds.conf.default内容:")"
+        cat feeds.conf.default | grep -v "^#" | grep -v "^$"
+    fi
+}
+     
 # 更新&安装插件
 update_install_feeds() {
     ./scripts/feeds update -a 1>/dev/null 2>&1
