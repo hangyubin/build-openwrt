@@ -1,4 +1,4 @@
-name: build x86/64 openwrt
+name: build  test_x86/64 openwrt
 
 on:
   workflow_call:
@@ -37,9 +37,9 @@ on:
       target:
         description: '选择要编译的机型'
         required: true
-        default: 'x86-64'
+        default: 'test-x86-64'
         type: choice
-        options: ['x86-64']
+        options: ['test-x86-64']
 
       ip_address:
         description: '设置默认IP地址'
