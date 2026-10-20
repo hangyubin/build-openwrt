@@ -1,0 +1,235 @@
+name: build x86/64 openwrt
+
+on:
+  workflow_call:
+    inputs:
+      source:
+        required: true
+        type: string
+      target:
+        required: true
+        type: string
+      ip_address:
+        required: true
+        type: string
+      partsize:
+        required: true
+        type: string
+      toolchain:
+        required: true
+        type: string
+      artifact:
+        required: true
+        type: string
+      release:
+        required: true
+        type: string
+
+  workflow_dispatch:
+    inputs:
+      source:
+        description: '选择要编译的源码'
+        required: true
+        default: 'immwrt'
+        type: choice
+        options: ['immwrt', 'lean']
+
+      target:
+        description: '选择要编译的机型'
+        required: true
+        default: 'x86-64'
+        type: choice
+        options: ['x86-64']
+
+      ip_address:
+        description: '设置默认IP地址'
+        required: false
+        default: '10.0.0.2'
+
+      partsize:
+        description: '设置rootfs大小'
+        required: false
+        default: '800'
+
+      toolchain:
+        description: '使用toolchain缓存'
+        required: false
+        default: true
+        type: boolean
+
+      artifact:
+        description: '上传固件到Artifact'
+        required: false
+        default: true
+        type: boolean
+
+      release:
+        description: '上传固件到Releases'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  build:
+    name: build ${{inputs.target}} ${{inputs.source}}
+    runs-on: ubuntu-24.04
+
+    env:
+      IP_ADDRESS: ${{inputs.ip_address}}
+      PART_SIZE: ${{inputs.partsize}}
+      TOOLCHAIN: ${{inputs.toolchain}}
+      CONFIG_FILE: configs/${{inputs.target}}-${{inputs.source}}.config
+      DIY_SCRIPT: ${{inputs.source}}.sh
+      RELEASE_TAG: ${{inputs.target}}-${{inputs.source}}
+      UPLOAD_ARTIFACT: ${{inputs.artifact}}
+      UPLOAD_RELEASE: ${{inputs.release}}
+      TZ: Asia/Shanghai
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Check Server Performance
+        run: |
+          echo "警告⚠"
+          echo "分配的服务器性能有限，若选择的插件过多，务必注意CPU性能！"
+          echo -e "已知CPU型号(降序): 7763，8370C，8272CL，8171M，E5-2673\n"
+          echo "==========================CPU信息=========================="
+          echo "CPU物理数量: $(cat /proc/cpuinfo | grep "physical id" | sort | uniq | wc -l)"
+          echo "CPU线程数量: $(nproc)"
+          echo -e "CPU型号信息:$(cat /proc/cpuinfo | grep -m1 name | awk -F: '{print $2}')\n"
+          echo "==========================内存信息=========================="
+          echo "已安装内存详细信息:"
+          echo -e "$(sudo lshw -short -C memory | grep GiB)\n"
+          echo "==========================硬盘信息=========================="
+          echo "硬盘数量: $(ls /dev/sd* | grep -v [1-9] | wc -l)" && df -hT
+
+      - name: Initialization Environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          docker rmi -f $(docker images -q) 2>/dev/null || true
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android $AGENT_TOOLSDIRECTORY
+          sudo swapoff -a && sudo rm -f /swapfile /mnt/swapfile
+          sudo -E apt -yqq purge azure-cli ghc* zulu* llvm* firefox google* dotnet* powershell openjdk* mongodb* moby* || true
+          sudo -E apt -yqq update
+          sudo -E apt -yqq install $(curl -fsSL is.gd/depends_ubuntu_2404)
+          sudo -E apt -yqq autoremove --purge
+          sudo -E apt -yqq autoclean
+          sudo -E apt -yqq clean
+          sudo -E systemctl daemon-reload
+          sudo timedatectl set-timezone "$TZ"
+
+      - name: Combine Disks
+        run: |
+          if mountpoint -q /mnt; then
+            mnt_size=$(($(df -k --output=avail /mnt | tail -1) / 1024 - 1024))
+            sudo truncate -s ${mnt_size}M /mnt/mnt.img
+            loop_mnt=$(sudo losetup -f --show /mnt/mnt.img)
+          fi
+          root_size=$(($(df -k --output=avail / | tail -1) / 1024 - 4096))
+          sudo truncate -s ${root_size}M /root.img
+          loop_root=$(sudo losetup -f --show /root.img)
+          sudo pvcreate -f $loop_mnt $loop_root
+          sudo vgcreate github $loop_mnt $loop_root
+          sudo lvcreate -n runner -l 100%FREE github
+          sudo mkfs.btrfs -f /dev/github/runner
+          sudo mkdir -p /workdir
+          sudo mount -o compress=zstd /dev/github/runner /workdir
+          sudo chown -R runner:runner /workdir && df -hT
+
+      - name: Load Custom Script
+        run: chmod +x $DIY_SCRIPT && ./$DIY_SCRIPT
+
+      - name: Compile Toolchain
+        if: env.REBUILD_TOOLCHAIN == 'true'
+        id: toolchain
+        run: |
+          cd $OPENWRT_PATH
+          make toolchain/compile -j1 V=s
+          $GITHUB_WORKSPACE/$DIY_SCRIPT
+
+      - name: Delete Old Toolchain
+        if: steps.toolchain.conclusion == 'success' || env.OUTPUT_RELEASE == 'true'
+        uses: mknejp/delete-release-assets@v1
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+          tag: toolchain-cache
+          assets: '${{env.SOURCE_REPO}}-${{env.LITE_BRANCH}}-${{env.DEVICE_TARGET}}*'
+          fail-if-no-assets: false
+          fail-if-no-release: false
+
+      - name: Upload Toolchain To Release
+        if: steps.toolchain.conclusion == 'success' || env.OUTPUT_RELEASE == 'true'
+        uses: softprops/action-gh-release@master
+        with:
+          name: toolchain-cache
+          tag_name: toolchain-cache
+          token: ${{secrets.GITHUB_TOKEN}}
+          files: output/*
+          body: OpenWrt 工具链缓存
+
+      - name: Download DL Packages
+        run: |
+          cd $OPENWRT_PATH
+          # make download -j1
+          make package/download -j1
+
+      - name: Compile Firmware
+        id: compile
+        run: |
+          cd $OPENWRT_PATH
+          mkdir -p files/etc/uci-defaults
+          cp $GITHUB_WORKSPACE/scripts/init-settings.sh files/etc/uci-defaults/99-init-settings
+          echo -e "1 thread compile"
+          make -j1 V=s
+          echo "FILE_DATE=$(date +"%Y.%m.%d")" >> $GITHUB_ENV
+          echo "DATE=$(date +"%Y.%m.%d-%H:%M:%S")" >> $GITHUB_ENV
+
+      - name: Organize Files
+        if: steps.compile.conclusion == 'success'
+        run: |
+          df -h && cd $OPENWRT_PATH
+          du -h --max-depth=1
+          echo "==============================="
+          cd $OPENWRT_PATH/bin/targets/*/* && ls
+          echo "==============================="
+          sed '/^$/d' $OPENWRT_PATH/.config > config.txt
+          cat config.buildinfo
+          cp -rf $OPENWRT_PATH/bin/packages/* packages
+          tar -zcf packages.tar.gz packages
+          sleep 3s && rm -rf packages sha256sums *.buildinfo *.bin *.json *rootfs.img.gz *targz-rootfs.tar.gz
+          echo "FIRMWARE_PATH=$PWD" >> $GITHUB_ENV
+
+      - name: Upload Firmware To Artifact
+        if: steps.compile.conclusion == 'success' && env.UPLOAD_ARTIFACT == 'true'
+        uses: actions/upload-artifact@main
+        with:
+          name: ${{env.SOURCE_REPO}}-${{env.LITE_BRANCH}}-${{env.DEVICE_TARGET}}-firmware-${{env.FILE_DATE}}
+          path: ${{env.FIRMWARE_PATH}}
+
+      - name: Upload Firmware To Release
+        if: steps.compile.conclusion == 'success' && env.UPLOAD_RELEASE == 'true'
+        uses: ncipollo/release-action@main
+        with:
+          name: ${{env.RELEASE_TAG}}-${{env.DATE}}
+          allowUpdates: true
+          removeArtifacts: true
+          tag: ${{env.RELEASE_TAG}}
+          token: ${{secrets.GITHUB_TOKEN}}
+          artifacts: ${{env.FIRMWARE_PATH}}/*
+          body: |
+            **This is ${{env.SOURCE_REPO}} firmware for ${{env.DEVICE_TARGET}}**
+            ### 📒 固件信息
+            - 💻 平台架构: ${{env.DEVICE_TARGET}}
+            - ⚽ 固件源码: ${{env.REPO_URL}}
+            - 💝 源码分支: ${{env.REPO_BRANCH}}
+            - 🚀 内核版本: ${{env.KERNEL_VERSION}}
+            - 🌐 默认地址: ${{env.IP_ADDRESS}}
+            - 🔑 默认密码: password
+            ### 🧊 固件版本
+            - 固件编译前最后一次➦[主源码](${{env.REPO_URL}})更新记录
+            - ${{env.COMMIT_AUTHOR}}
+            - ${{env.COMMIT_DATE}}
+            - ${{env.COMMIT_MESSAGE}}
+            - ${{env.COMMIT_HASH}}
