@@ -321,28 +321,28 @@ add_custom_packages() {
     [ -d "$destination_dir" ] || mkdir -p "$destination_dir"
 
     # 基础插件
-    git_clone https://github.com/kongfl888/luci-app-adguardhome
-    clone_all lua https://github.com/sirpdboy/luci-app-ddns-go
-    clone_all v5-lua https://github.com/sbwml/luci-app-mosdns
-    git_clone https://github.com/sbwml/packages_lang_golang golang
-    git_clone lede https://github.com/pymumu/luci-app-smartdns
-    git_clone https://github.com/pymumu/openwrt-smartdns smartdns
-    git_clone https://github.com/ximiTech/luci-app-msd_lite
-    git_clone https://github.com/ximiTech/msd_lite
+  #  git_clone https://github.com/kongfl888/luci-app-adguardhome
+  #  clone_all lua https://github.com/sirpdboy/luci-app-ddns-go
+  #  clone_all v5-lua https://github.com/sbwml/luci-app-mosdns
+  #  git_clone https://github.com/sbwml/packages_lang_golang golang
+  #  git_clone lede https://github.com/pymumu/luci-app-smartdns
+  #  git_clone https://github.com/pymumu/openwrt-smartdns smartdns
+  #  git_clone https://github.com/ximiTech/luci-app-msd_lite
+  #  git_clone https://github.com/ximiTech/msd_lite
 
     # 科学上网插件
-    clone_all https://github.com/fw876/helloworld
-    clone_all https://github.com/Openwrt-Passwall/openwrt-passwall-packages
-    clone_all https://github.com/Openwrt-Passwall/openwrt-passwall
-    clone_all https://github.com/Openwrt-Passwall/openwrt-passwall2
-    clone_dir https://github.com/vernesong/OpenClash luci-app-openclash
+  #  clone_all https://github.com/fw876/helloworld
+  #  clone_all https://github.com/Openwrt-Passwall/openwrt-passwall-packages
+  #  clone_all https://github.com/Openwrt-Passwall/openwrt-passwall
+  #  clone_all https://github.com/Openwrt-Passwall/openwrt-passwall2
+  #  clone_dir https://github.com/vernesong/OpenClash luci-app-openclash
 
     # Themes
-    git_clone 18.06 https://github.com/kiddin9/luci-theme-edge
-    git_clone 18.06 https://github.com/jerrykuku/luci-theme-argon
-    git_clone 18.06 https://github.com/jerrykuku/luci-app-argon-config
-    clone_dir https://github.com/xiaoqingfengATGH/luci-theme-infinityfreedom luci-theme-infinityfreedom-ng
-    clone_dir https://github.com/haiibo/packages luci-theme-opentomcat
+   # git_clone 18.06 https://github.com/kiddin9/luci-theme-edge
+   # git_clone 18.06 https://github.com/jerrykuku/luci-theme-argon
+   # git_clone 18.06 https://github.com/jerrykuku/luci-app-argon-config
+   # clone_dir https://github.com/xiaoqingfengATGH/luci-theme-infinityfreedom luci-theme-infinityfreedom-ng
+   # clone_dir https://github.com/haiibo/packages luci-theme-opentomcat
 
     # 晶晨宝盒
     clone_all lua https://github.com/ophub/luci-app-amlogic
