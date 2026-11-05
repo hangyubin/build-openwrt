@@ -142,7 +142,7 @@ jobs:
         run: chmod +x $DIY_SCRIPT && ./$DIY_SCRIPT
 
       - name: Compile Toolchain
-        if: env.REBUILD_TOOLCHAIN == 'false'
+        if: env.REBUILD_TOOLCHAIN == 'true'
         id: toolchain
         run: |
           cd $OPENWRT_PATH
