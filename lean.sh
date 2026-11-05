@@ -183,10 +183,7 @@ main() {
 
     # 下载部署toolchain缓存
     status_info "下载部署toolchain缓存" download_toolchain
-
-    # 添加额外软件源（istore + nas）
-    status_info "添加额外软件源" add_extra_feeds
-
+    
     # 更新&安装插件
     status_info "更新&安装插件" update_install_feeds
 
@@ -285,24 +282,6 @@ download_toolchain() {
     else
         echo "REBUILD_TOOLCHAIN=true" >> $GITHUB_ENV
         return 99
-    fi
-}
-
-# 添加额外软件源（istore 应用商店 + NAS/Quickstart）
-add_extra_feeds() {
-    # iStore 应用商店
-    echo 'src-git istore https://github.com/linkease/istore;main' >> feeds.conf.default
-
-    # NAS 相关包
-    echo 'src-git nas https://github.com/linkease/nas-packages.git;master' >> feeds.conf.default
-
-    # NAS LuCI 界面（含 Quickstart 首页/向导）
-    echo 'src-git nas_luci https://github.com/linkease/nas-packages-luci.git;main' >> feeds.conf.default
-
-    # 可选：显示当前 feeds 源
-    if [[ "$DEBUG" = 'true' ]]; then
-        echo "$(color cc "📋 当前feeds.conf.default内容:")"
-        cat feeds.conf.default | grep -v "^#" | grep -v "^$"
     fi
 }
 
